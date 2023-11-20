@@ -1,0 +1,302 @@
+Entities : 
+User 
+Tour
+Locations
+Review
+Booking
+
+Collections
+User  
+{
+    id : 1
+    name : "Rahul",
+    email : "e@gmail.com",
+    profile : 
+    review : [ -> Embedding
+        {
+            review : "good",
+            rating : 4.5,
+        },
+        {
+            review : "good",
+            rating : 4.5,
+        }
+    ]
+
+
+    booking : [ -> child referencing
+        ObjectId("1d3dfw3d)
+        ObjectId("1d3dfw3d)
+        ObjectId("1d3dfw3d)
+    ]
+} 
+
+Booking  
+{
+    id : 1
+    tourName : "Dhaka-Cox's Bazar",
+    userId : 1 -> referencing : parent referencing
+} 
+
+
+Tour
+{
+    locations : [
+        {
+            area : "ST. Martin"
+        }
+    ]
+}
+Embedding vs Referencing
+Referencing: 
+
+
+2 way Referencing : modified child referencing
+
+Movie : 
+{
+ id : 1,
+ name : "Loki",
+ actors : [
+    ObjectId("1d3dfw3d)
+    ObjectId("1d3dfw3d)
+    ObjectId("1d3dfw3d)
+    ObjectId("1d3dfw3d)
+ ]
+}
+
+Actor :
+{ - BSON Document = max limit = 16megabyte
+    id : 1,
+    name : "Tom Hiddleston",
+    movies: [
+        ObjectId("1d3dfw3d)
+        ObjectId("1d3dfw3d)
+        ObjectId("1d3dfw3d)
+        ObjectId("1d3dfw3d)
+    ]
+}
+
+
+Relation of Database:
+1. One to One = user : profile  : embedding : referencing
+2. One to Many / Many to One = User : Order
+//Only for mongodb
+    a.One to Few : User : [Order1, Order2, Order3, ...... 50>] : Embedding/Referencing
+    b. One to Many : User : [Comment1, .....100000] : Referencing : Child / Parent referencing
+    c. One to Tons : User : Chat ["Hi", "Hello"] Parent Referencing
+3. Many to Many = Actor : Movie : 2 Way Referencing
+
+
+//Choosing reference/ embedding
+
+Tour : {
+    location ; [ -> Embedding
+        {
+            area : "ST. Martin"
+        }
+        {
+
+        }
+    ]
+    
+    reviews : [
+    ObjectId ("1d3dfw3d)
+    ObjectId ("1d3dfw3d)
+    ObjectId ("1d3dfw3d)
+    ]
+}
+
+Booking : { -> parent reference
+    id : 1
+    userId : 1
+}
+
+User {
+    //temon referencing nai
+}
+
+Review : { -> parent refrencing
+    id: 1,
+    tourId: 1
+    userId: 1
+}
+
+
+collection er closness
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------code follow------------------>
+
+-----INTERFACE------>
+interface IUser {
+  name: string
+  age: number
+  email: string
+  photo: string
+  role: 'user' | 'admin'
+  userStatus: 'active' | 'inactive'
+}
+
+export { IUser }
+
+
+
+
+
+
+
+
+
+
+------MODEL------->
+import { Schema, model } from 'mongoose'
+import { IUser } from '../interface/user.interface'
+
+const userSchema = new Schema<IUser>({
+  name: {
+    type: String,
+    required: [true, 'Please tell us your name'],
+  },
+  age: {
+    type: Number,
+    required: [true, 'Please tell us your age'],
+  },
+  email: {
+    type: String,
+    unique: true,
+    required: [true, 'Please tell us your email'],
+    lowercase: true,
+    match: [/\S+@\S+\.\S+/, 'Please use a valid email address'],
+  },
+  photo: String,
+  role: {
+    type: String,
+    enum: {
+      values: ['user', 'admin'],
+      message: 'Role must be either user or admin, but received {{VALUE}}',
+    },
+    default: 'user',
+  },
+  userStatus: {
+    type: String,
+    enum: {
+      values: ['active', 'inactive'],
+      message:
+        'Status must be either active or inactive, but received {{VALUE}}',
+    },
+    default: 'active',
+  },
+})
+
+const User = model<IUser>('User', userSchema)
+export { User }
+
+
+
+
+
+
+
+
+
+
+
+--------SERVICE------>
+import { IUser } from '../interface/user.interface'
+import { User } from '../models/user.model'
+
+const createUser = async (userData: IUser): Promise<IUser> => {
+  const result = await User.create(userData)
+  return result
+}
+
+export const userServices = {
+  createUser,
+}
+
+
+
+
+
+
+
+
+----------CONTROLLER------->
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Request, Response } from 'express'
+import { userServices } from '../services/user.service'
+
+const createUser = async (req: Request, res: Response) => {
+  try {
+    const userData = req.body
+    const result = await userServices.createUser(userData)
+    res.status(200).json({
+      status: 'success',
+      message: 'user created successfully',
+      data: result,
+    })
+  } catch (error: any) {
+    console.log(error)
+    res.status(500).json({
+      status: 'failed',
+      message: error.message || 'Something went wrong',
+    })
+  }
+}
+
+export const userController = {
+  createUser,
+}
+
+
+
+
+
+
+
+------ROUTE------>
+import express from 'express'
+import { userController } from '../controllers/user.controller'
+const router = express.Router()
+
+router.post('/create-user', userController.createUser)
+
+export const userRoutes = router
+
+
+
+
+
+
+
+--------APP------->
+import express, { Application, Request, Response } from 'express'
+import { userRoutes } from './routes/user.route'
+import cors from 'cors'
+const app: Application = express()
+app.use(express.json())
+app.use(cors())
+
+app.use('/api/v1/users', userRoutes)
+
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Welcome to murir tin tour and travel',
+  })
+})
+
+export default app
+
+
