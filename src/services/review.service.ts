@@ -3,7 +3,9 @@ import Review from '../models/review.model'
 
 const createReview = async (reviewData: IReview): Promise<IReview> => {
   const result = await Review.create(reviewData)
-
+  if (result) {
+    Review.calculateAverageRatings(result.tour)
+  }
   return result
 }
 
@@ -28,13 +30,18 @@ const updateReview = async (
     new: true,
     runValidators: true,
   })
+  if (result) {
+    await Review.calculateAverageRatings(result.tour)
+  }
 
   return result
 }
 
 const deleteReview = async (id: string): Promise<IReview | null> => {
   const result = await Review.findByIdAndDelete(id)
-
+  if (result) {
+    await Review.calculateAverageRatings(result.tour)
+  }
   return result
 }
 
