@@ -42,10 +42,7 @@ userSchema.pre(/^find/, function (this: Query<IUser, Document>, next) {
   this.find({ userStatus: { $eq: 'active' } })
   next()
 })
-// userSchema.pre('findOne', function (next) {
-//   this.findOne({ userStatus: { $eq: 'active' } })
-//   next()
-// })
+
 
 const User = model<IUser>('User', userSchema)
 export { User }
